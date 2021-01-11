@@ -1,78 +1,112 @@
+import os
+import sys
+
 import pygame
-from random import randint
 
 
-class Board:
-    # создание поля
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.board = [[randint(0, 1) for i in range(width)] for _ in range(height)]
-        # значения по умолчанию
-        self.left = 40
-        self.top = 40
-        self.cell_size = 40
-        self.turn = 0
-
-    # настройка внешнего вида
-    def set_view(self, left, top, cell_size):
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
-
-    def render(self, screen):
-        left = self.left
-        top = self.top
-        s = self.cell_size
-        for y in range(self.height):
-            for x in range(self.width):
-                col = (255, 0, 0) if not (self.board[y][x]) else (0, 0, 255)
-                # pygame.draw.rect(screen, col, (x * s + left, y * s + top, s, s))
-                coords = (x * s + left + s // 2, y * s + top + s // 2)
-                pygame.draw.circle(screen, col, coords, s // 2)
-                pygame.draw.rect(screen, (255, 255, 255), (x * s + left, y * s + top, s, s), 1)
-
-    def get_cell(self, mouse_pos):
-        cell_x = (mouse_pos[0] - self.left) // self.cell_size
-        cell_y = (mouse_pos[1] - self.top) // self.cell_size
-        if cell_x < 0 or cell_x >= self.width or cell_y < 0 or cell_y >= self.height:
-            return None
-        res = [(cell_x, cell_y)]
-        for i in range(self.height):
-            res.append((cell_x, i))
-        for i in range(self.width):
-            res.append((i, cell_y))
-        return res
-
-    def on_click(self, cells):
-        for i, j in cells:
-            self.board[j][i] = (self.board[j][i] + 1) % 2
-
-    def get_click(self, mouse_pos):
-        cells = self.get_cell(mouse_pos)
-        cell = cells[0]
-        if self.board[cell[1]][cell[0]] == self.turn:
-            self.on_click(cells)
-            self.turn = (self.turn + 1) % 2
+# Изображение не получится загрузить
+# без предварительной инициализации pygame
 
 
-if __name__ == '__main__':
-    n = int(input())
-    pygame.init()
-    size = width, height = (n + 2) * 40, (n + 2) * 40
-    screen = pygame.display.set_mode(size)
-    r = 0
-    fps = 60
-    clock = pygame.time.Clock()
-    board = Board(n, n)
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                board.get_click(event.pos)
-        screen.fill((0, 0, 0))
-        board.render(screen)
-        pygame.display.flip()
-    pygame.quit()
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+    # если файл не существует, то выходим
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
+    return image
+
+
+pygame.init()
+size = width, height = 500, 500
+screen = pygame.display.set_mode(size)
+
+tile_images = {
+    'wall': load_image('box.png'),
+    'empty': load_image('grass.png')
+}
+player_image = load_image('mario.png')
+
+tile_width = tile_height = 80
+
+# основной персонаж
+player = None
+
+# группы спрайтов
+all_sprites = pygame.sprite.Group()
+tiles_group = pygame.sprite.Group()
+player_group = pygame.sprite.Group()
+
+
+def generate_level(level):
+    new_player, x, y = None, None, None
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if level[y][x] == '.':
+                Tile('empty', x, y)
+            elif level[y][x] == '#':
+                Tile('wall', x, y)
+            elif level[y][x] == '@':
+                Tile('empty', x, y)
+                new_player = Player(x, y)
+    # вернем игрока, а также размер поля в клетках
+    return new_player, x, y
+
+
+def load_level(filename):
+    filename = "data/" + filename
+    # читаем уровень, убирая символы перевода строки
+    with open(filename, 'r') as mapFile:
+        level_map = [line.strip() for line in mapFile]
+
+    # и подсчитываем максимальную длину
+    max_width = max(map(len, level_map))
+
+    # дополняем каждую строку пустыми клетками ('.')
+    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(tiles_group, all_sprites)
+        self.image = tile_images[tile_type]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(player_group, all_sprites)
+        self.image = player_image
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x + 15, tile_height * pos_y + 5)
+
+#
+# if __name__ == '__main__':
+#     n = int(input())
+#     pygame.init()
+#     size = width, height = (n + 2) * 40, (n + 2) * 40
+#     screen = pygame.display.set_mode(size)
+#     r = 0
+#     fps = 60
+#     clock = pygame.time.Clock()
+#     board = Board(n, n)
+#     running = True
+#     while running:
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 running = False
+#             if event.type == pygame.MOUSEBUTTONDOWN:
+#                 board.get_click(event.pos)
+#         screen.fill((0, 0, 0))
+#         board.render(screen)
+#         pygame.display.flip()
+#     pygame.quit()
