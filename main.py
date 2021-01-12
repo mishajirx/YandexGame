@@ -38,7 +38,7 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-                new_player = Player(x, y)
+                new_player = AnimatedSprite(load_image("dragon_sheet8x2.png"), 8, 2, x, y)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -70,6 +70,29 @@ class Player(pygame.sprite.Sprite):
         self.image = player_image
         self.rect = self.image.get_rect().move(
             tile_width * pos_x + 15, tile_height * pos_y + 5)
+
+
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 def terminate():
@@ -109,14 +132,7 @@ def start_screen():
 
 
 def some_screen():
-    global screen, clock
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Если в правилах несколько строк,",
-                  "приходится выводить их построчно"]
-
-    fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
-    screen.blit(fon, (100, 100))
+    global screen, clock, all_sprites
 
     while True:
         for event in pygame.event.get():
@@ -124,6 +140,7 @@ def some_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 return  # начинаем игру
+        all_sprites.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -153,6 +170,9 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     running = True
     start_screen()
+    generate_level(
+        ['........', '........', '..###...', '........', '........', '........', '...@....',
+         '........'])
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -160,5 +180,6 @@ if __name__ == '__main__':
             elif event.type == pygame.KEYDOWN:
                 some_screen()
         screen.fill((0, 0, 0))
+        all_sprites.draw(screen)
         pygame.display.flip()
     pygame.quit()
