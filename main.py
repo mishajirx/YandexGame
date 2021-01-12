@@ -5,6 +5,7 @@ import pygame
 
 FPS = 50
 N = M = 800
+TILE_SIZE = 80
 
 
 # Изображение не получится загрузить
@@ -30,7 +31,7 @@ def load_image(name, colorkey=None):
 
 def generate_level(level):
     new_player, x, y = None, None, None
-    playerxy = (0,0)
+    playerxy = (0, 0)
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -39,7 +40,7 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-                playerxy = (x,y)
+                playerxy = (x, y)
     new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, *playerxy)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
@@ -63,7 +64,7 @@ class Tile(pygame.sprite.Sprite):
         super().__init__(tiles_group, all_sprites)
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x, tile_height * pos_y)
+            TILE_SIZE * pos_x, TILE_SIZE * pos_y)
 
 
 class Player(pygame.sprite.Sprite):
@@ -71,7 +72,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(player_group, all_sprites)
         self.image = player_image
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x + 15, tile_height * pos_y + 5)
+            TILE_SIZE * pos_x + 15, TILE_SIZE * pos_y + 5)
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -81,7 +82,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
-        self.rect = self.rect.move(x, y)
+        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -93,11 +94,14 @@ class AnimatedSprite(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
+        self.change_frame()
+
+    def change_frame(self):
         self.cur_frame = (self.cur_frame + 0.2) % len(self.frames)
         self.image = self.frames[int(self.cur_frame)]
 
     def do_move(self, x, y):
-        self.rect = self.rect.move(x, y)
+        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
 
 def terminate():
@@ -160,14 +164,12 @@ if __name__ == '__main__':
         'empty': load_image('grass.png')
     }
     btns = {
-        119: (0, -80),
-        97: (-80, 0),
-        115: (0, 80),
-        100: (80, 0)
+        119: (0, -1),
+        97: (-1, 0),
+        115: (0, 1),
+        100: (1, 0)
     }
     player_image = load_image('mario.png', -1)
-
-    tile_width = tile_height = 80
 
     # основной персонаж
 
@@ -175,8 +177,8 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    lvl = ['.......', '.......', '..###..', '.......', '.......', '.......', '......', '....@...']
-    player, w, h = generate_level(lvl)
+    field = ['.......', '.......', '..###..', '.......', '.......', '.......', '......', '....@...']
+    player, w, h = generate_level(field)
     r = 0
     fps = 60
     clock = pygame.time.Clock()
@@ -187,7 +189,7 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                player.do_move(*btns[event.key])
+                player.do_move(*btns.get(event.key, (0, 0)))
         screen.fill((0, 0, 0))
         all_sprites.draw(screen)
         all_sprites.update()
