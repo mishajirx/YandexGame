@@ -133,21 +133,21 @@ if __name__ == '__main__':
     size = width, height = N, M
     screen = pygame.display.set_mode(size)
 
-    # tile_images = {
-    #     'wall': load_image('box.png'),
-    #     'empty': load_image('grass.png')
-    # }
-    # player_image = load_image('mario.png')
-    #
-    # tile_width = tile_height = 80
-    #
-    # # основной персонаж
-    # player = None
-    #
-    # # группы спрайтов
-    # all_sprites = pygame.sprite.Group()
-    # tiles_group = pygame.sprite.Group()
-    # player_group = pygame.sprite.Group()
+    tile_images = {
+        'wall': load_image('box.png'),
+        'empty': load_image('grass.png')
+    }
+    player_image = load_image('mario.png')
+
+    tile_width = tile_height = 80
+
+    # основной персонаж
+    player = None
+
+    # группы спрайтов
+    all_sprites = pygame.sprite.Group()
+    tiles_group = pygame.sprite.Group()
+    player_group = pygame.sprite.Group()
     r = 0
     fps = 60
     clock = pygame.time.Clock()
