@@ -30,6 +30,7 @@ def load_image(name, colorkey=None):
 
 def generate_level(level):
     new_player, x, y = None, None, None
+    playerxy = (0,0)
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -38,8 +39,8 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-                # new_player = Player(x, y)
-                new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, x, y)
+                playerxy = (x,y)
+    new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, *playerxy)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -95,8 +96,8 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 0.2) % len(self.frames)
         self.image = self.frames[int(self.cur_frame)]
 
-    def do_move(self):
-        self.rect = self.rect.move(0, 80)
+    def do_move(self, x, y):
+        self.rect = self.rect.move(x, y)
 
 
 def terminate():
@@ -155,8 +156,14 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
 
     tile_images = {
-        'wall': load_image('box.png', -1),
-        'empty': load_image('grass.png', -1)
+        'wall': load_image('box.png'),
+        'empty': load_image('grass.png')
+    }
+    btns = {
+        119: (0, -80),
+        97: (-80, 0),
+        115: (0, 80),
+        100: (80, 0)
     }
     player_image = load_image('mario.png', -1)
 
@@ -168,7 +175,7 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    lvl = ['.......', '.......', '..###..', '.......', '.......', '.......', '...@...', '.......']
+    lvl = ['.......', '.......', '..###..', '.......', '.......', '.......', '......', '....@...']
     player, w, h = generate_level(lvl)
     r = 0
     fps = 60
@@ -180,11 +187,10 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                player.do_move()
-                #some_screen()
+                player.do_move(*btns[event.key])
         screen.fill((0, 0, 0))
         all_sprites.draw(screen)
-        player.update()
+        all_sprites.update()
         pygame.display.flip()
         clock.tick(fps)
     pygame.quit()
