@@ -41,7 +41,8 @@ def generate_level(level):
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 playerxy = (x, y)
-    new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, *playerxy)
+    # new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, *playerxy)
+    new_player = AnimatedSprite(load_image("test.png", -1), 10, 8, *playerxy)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -88,6 +89,8 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
+            if j < 7:
+                continue
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
                 self.frames.append(sheet.subsurface(pygame.Rect(
@@ -169,7 +172,6 @@ if __name__ == '__main__':
         115: (0, 1),
         100: (1, 0)
     }
-    player_image = load_image('mario.png', -1)
 
     # основной персонаж
 
