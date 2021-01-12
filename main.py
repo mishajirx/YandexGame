@@ -18,13 +18,13 @@ def load_image(name, colorkey=None):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
     image = pygame.image.load(fullname)
-    # if colorkey is not None:
-    #     image = image.convert()
-    #     if colorkey == -1:
-    #         colorkey = image.get_at((0, 0))
-    #     image.set_colorkey(colorkey)
-    # else:
-    #     image = image.convert_alpha()
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
     return image
 
 
@@ -38,7 +38,8 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-                new_player = AnimatedSprite(load_image("dragon_sheet8x2.png"), 8, 2, x, y)
+                # new_player = Player(x, y)
+                new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, x, y)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -91,8 +92,11 @@ class AnimatedSprite(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-        self.image = self.frames[self.cur_frame]
+        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames)
+        self.image = self.frames[int(self.cur_frame)]
+
+    def do_move(self):
+        self.rect = self.rect.move(0, 80)
 
 
 def terminate():
@@ -151,35 +155,36 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
 
     tile_images = {
-        'wall': load_image('box.png'),
-        'empty': load_image('grass.png')
+        'wall': load_image('box.png', -1),
+        'empty': load_image('grass.png', -1)
     }
-    player_image = load_image('mario.png')
+    player_image = load_image('mario.png', -1)
 
     tile_width = tile_height = 80
 
     # основной персонаж
-    player = None
 
     # группы спрайтов
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
+    lvl = ['.......', '.......', '..###..', '.......', '.......', '.......', '...@...', '.......']
+    player, w, h = generate_level(lvl)
     r = 0
     fps = 60
     clock = pygame.time.Clock()
     running = True
     start_screen()
-    generate_level(
-        ['........', '........', '..###...', '........', '........', '........', '...@....',
-         '........'])
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                some_screen()
+                player.do_move()
+                #some_screen()
         screen.fill((0, 0, 0))
         all_sprites.draw(screen)
+        player.update()
         pygame.display.flip()
+        clock.tick(fps)
     pygame.quit()
