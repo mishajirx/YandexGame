@@ -99,6 +99,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
             cnt += 1
 
     def update(self):
+        print('updating')
         self.change_frame()
 
     def change_frame(self):
@@ -106,15 +107,41 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.image = self.frames[self.direction][int(self.cur_frame)]
 
     def do_move(self, key_number):
-        x, y, self.direction = self.btns.get(key_number, (0, 0))
-        # cur_x, cur_y = self.rect.x, self.rect.y
-        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        x, y, self.direction = self.btns.get(key_number, (None, None, None))
+        if x is None:
+            return
+        print(self.direction)
+        # speed = 0.005
+        # cur_x, cur_y = 0, 0
+        # goal = (x * 80, y * 80)
+        # i, k = 0, 1/speed
+        # while abs(cur_x - goal[0]) > 0.001 or abs(cur_y - goal[1]) > 0.001:
+        #     if i % k:
+        #         print('her')
+        #         self.rect = self.rect.move(x, y)
+        #         self.update()
+        #     cur_x = round(speed * x + cur_x, 4)
+        #     cur_y = round(speed * y + cur_y, 4)
+        #     i += 1
+        for i in range(80):
+            self.rect = self.rect.move(x, y)
+            print(self.rect.x, self.rect.y)
+            redraw()
+        self.direction = 0
+
+        # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
 
 def terminate():
     pygame.quit()
     sys.exit()
 
+def redraw():
+    screen.fill((0, 0, 0))
+    all_sprites.draw(screen)
+    all_sprites.update()
+    pygame.display.flip()
+    clock.tick(fps)
 
 def start_screen():
     global screen, clock
@@ -194,9 +221,5 @@ if __name__ == '__main__':
                 player.do_move(event.key)
             elif event.type == pygame.MOUSEWHEEL:
                 some_screen()
-        screen.fill((0, 0, 0))
-        all_sprites.draw(screen)
-        all_sprites.update()
-        pygame.display.flip()
-        clock.tick(fps)
+        redraw()
     pygame.quit()
