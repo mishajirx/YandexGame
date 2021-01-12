@@ -68,42 +68,46 @@ class Tile(pygame.sprite.Sprite):
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(player_group, all_sprites)
-        self.image = player_image
-        self.rect = self.image.get_rect().move(
-            TILE_SIZE * pos_x + 15, TILE_SIZE * pos_y + 5)
-
-
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
-        self.frames = []
+        self.frames = [[] for _ in range(5)]
+        self.direction = 0
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
-        self.image = self.frames[self.cur_frame]
+        self.image = self.frames[self.direction][self.cur_frame]
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        self.btns = {
+            119: (0, -1, 3),  # W
+            97: (-1, 0, 2),  # A
+            115: (0, 1, 1),  # S
+            100: (1, 0, 4)  # D
+        }
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
+        cnt = 0
         for j in range(rows):
-            if j < 7:
+            if 1 <= j <= 3:
                 continue
-            for i in range(columns):
+            p = 3 if j == 0 else columns
+            for i in range(p):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
+                self.frames[cnt].append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
+            cnt += 1
 
     def update(self):
         self.change_frame()
 
     def change_frame(self):
-        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames)
-        self.image = self.frames[int(self.cur_frame)]
+        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.direction])
+        self.image = self.frames[self.direction][int(self.cur_frame)]
 
-    def do_move(self, x, y):
+    def do_move(self, key_number):
+        x, y, self.direction = self.btns.get(key_number, (0, 0))
+        # cur_x, cur_y = self.rect.x, self.rect.y
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
 
@@ -144,7 +148,10 @@ def start_screen():
 
 
 def some_screen():
-    global screen, clock, all_sprites
+    global screen, clock
+
+    fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
+    screen.blit(fon, (100, 100))
 
     while True:
         for event in pygame.event.get():
@@ -152,7 +159,6 @@ def some_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 return  # начинаем игру
-        all_sprites.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -165,12 +171,6 @@ if __name__ == '__main__':
     tile_images = {
         'wall': load_image('box.png'),
         'empty': load_image('grass.png')
-    }
-    btns = {
-        119: (0, -1),
-        97: (-1, 0),
-        115: (0, 1),
-        100: (1, 0)
     }
 
     # основной персонаж
@@ -191,7 +191,9 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                player.do_move(*btns.get(event.key, (0, 0)))
+                player.do_move(event.key)
+            elif event.type == pygame.MOUSEWHEEL:
+                some_screen()
         screen.fill((0, 0, 0))
         all_sprites.draw(screen)
         all_sprites.update()
