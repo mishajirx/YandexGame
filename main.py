@@ -36,9 +36,9 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile('empty', x, y)
-            elif level[y][x] == 'E':
-                Tile('wall', x, y)
-
+            elif level[y][x] == 'e':
+                Tile('empty', x, y)
+                Enemy(load_image('enemy.png', -1), 3, 2, x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 playerxy = (x, y)
@@ -67,6 +67,7 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
 
+
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
@@ -91,11 +92,15 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self):
         self.change_frame()
-
+        if pygame.sprite.collide_mask(self, player):
+            some_screen()
+            self.kill()
+            player.isKiller = True
 
     def change_frame(self):
         self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
         self.image = self.frames[self.status][int(self.cur_frame)]
+
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -106,11 +111,19 @@ class Player(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.direction][self.cur_frame]
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        self.last_action = (0, 0)
+        self.isKiller = False
         self.btns = {
-            119: (0, -1, 3),  # W
-            97: (-1, 0, 2),  # A
-            115: (0, 1, 1),  # S
-            100: (1, 0, 4)  # D
+            119: (0, -1),  # W
+            97: (-1, 0),  # A
+            115: (0, 1),  # S
+            100: (1, 0)  # D
+        }
+        self.actions = {
+            (0, -1): 3,
+            (-1, 0): 2,
+            (0, 1): 1,
+            (1, 0): 4
         }
 
     def cut_sheet(self, sheet, columns, rows):
@@ -135,15 +148,21 @@ class Player(pygame.sprite.Sprite):
         self.image = self.frames[self.direction][int(self.cur_frame)]
 
     def do_move(self, key_number):
-        x, y, self.direction = self.btns.get(key_number, (None, None, None))
+        x, y = self.btns.get(key_number, (None, None))
         if x is None:
             return
+        self.moving(x, y)
+
+    def moving(self, x, y):
+        self.direction = self.actions[(x, y)]
+        self.last_action = (x, y)
         for i in range(80):
             self.rect = self.rect.move(x, y)
-            print(self.rect.x, self.rect.y)
             redraw()
         self.direction = 0
-
+        if self.isKiller:
+            self.isKiller = False
+            player.moving(player.last_action[0] * -1, player.last_action[1] * -1)
         # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
 
@@ -202,6 +221,7 @@ def some_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                print(int(event.type))
                 return  # начинаем игру
         pygame.display.flip()
         clock.tick(FPS)
@@ -223,7 +243,7 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    field = ['.......', '.......', '..###..', '.......', '.......', '.......', '......', '....@...']
+    field = ['.......', '.......', '..eee..', '.......', '.......', '.......', '......', '....@...']
     player, w, h = generate_level(field)
     r = 0
     fps = 60
