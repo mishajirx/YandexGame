@@ -36,13 +36,13 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile('empty', x, y)
-            elif level[y][x] == '#':
+            elif level[y][x] == 'E':
                 Tile('wall', x, y)
+
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 playerxy = (x, y)
-    # new_player = AnimatedSprite(load_image("dragon_sheet8x2.png", -1), 8, 2, *playerxy)
-    new_player = AnimatedSprite(load_image("test.png", -1), 10, 8, *playerxy)
+    new_player = Player(load_image("test.png", -1), 10, 8, *playerxy)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -67,8 +67,37 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
 
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = [[] for _ in range(5)]
+        self.status = 0
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.status][self.cur_frame]
+        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
-class AnimatedSprite(pygame.sprite.Sprite):
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        cnt = 0
+        for j in range(rows):
+            p = 1 if j == 1 else columns
+            for i in range(p):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames[cnt].append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+            cnt += 1
+
+    def update(self):
+        self.change_frame()
+
+
+    def change_frame(self):
+        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
+        self.image = self.frames[self.status][int(self.cur_frame)]
+
+class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
         self.frames = [[] for _ in range(5)]
@@ -99,7 +128,6 @@ class AnimatedSprite(pygame.sprite.Sprite):
             cnt += 1
 
     def update(self):
-        print('updating')
         self.change_frame()
 
     def change_frame(self):
@@ -110,19 +138,6 @@ class AnimatedSprite(pygame.sprite.Sprite):
         x, y, self.direction = self.btns.get(key_number, (None, None, None))
         if x is None:
             return
-        print(self.direction)
-        # speed = 0.005
-        # cur_x, cur_y = 0, 0
-        # goal = (x * 80, y * 80)
-        # i, k = 0, 1/speed
-        # while abs(cur_x - goal[0]) > 0.001 or abs(cur_y - goal[1]) > 0.001:
-        #     if i % k:
-        #         print('her')
-        #         self.rect = self.rect.move(x, y)
-        #         self.update()
-        #     cur_x = round(speed * x + cur_x, 4)
-        #     cur_y = round(speed * y + cur_y, 4)
-        #     i += 1
         for i in range(80):
             self.rect = self.rect.move(x, y)
             print(self.rect.x, self.rect.y)
@@ -136,12 +151,14 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+
 def redraw():
     screen.fill((0, 0, 0))
     all_sprites.draw(screen)
     all_sprites.update()
     pygame.display.flip()
     clock.tick(fps)
+
 
 def start_screen():
     global screen, clock
