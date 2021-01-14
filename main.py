@@ -6,11 +6,13 @@ import pygame
 FPS = 50
 N = M = 800
 TILE_SIZE = 80
-<<<<<<< HEAD
+# <<<<<<< HEAD
 masOfGrass = list()
-=======
+# =======
 isQuestionAsked = False
->>>>>>> 78f49a6489c56628f26d62b80322abb424ff5fe9
+
+
+# >>>>>>> 78f49a6489c56628f26d62b80322abb424ff5fe9
 
 # Изображение не получится загрузить
 # без предварительной инициализации pygame
@@ -178,6 +180,72 @@ class Player(pygame.sprite.Sprite):
         # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
 
+class Button(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = [[] for _ in range(5)]
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        #self.image = load_image()
+        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        self.last_action = (0, 0)
+        self.isKiller = False
+        self.canBeKiller = True
+        self.btns = {
+            119: (0, -1),  # W
+            97: (-1, 0),  # A
+            115: (0, 1),  # S
+            100: (1, 0)  # D
+        }
+        self.actions = {
+            (0, -1): 3,
+            (-1, 0): 2,
+            (0, 1): 1,
+            (1, 0): 4
+        }
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        cnt = 0
+        for j in range(rows):
+            if 1 <= j <= 3:
+                continue
+            p = 3 if j == 0 else columns
+            for i in range(p):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames[cnt].append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+            cnt += 1
+
+    def update(self):
+        self.change_frame()
+
+    def change_frame(self):
+        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.direction])
+        self.image = self.frames[self.direction][int(self.cur_frame)]
+
+    def do_move(self, key_number):
+        x, y = self.btns.get(key_number, (None, None))
+        if x is None:
+            return
+        self.moving(x, y)
+
+    def moving(self, x, y):
+        global isQuestionAsked
+        self.direction = self.actions[(x, y)]
+        self.last_action = (x, y)
+        for i in range(80):
+            self.rect = self.rect.move(x, y)
+            redraw()
+        self.direction = 0
+        if self.isKiller:
+            self.isKiller = False
+            self.canBeKiller = False
+            player.moving(player.last_action[0] * -1, player.last_action[1] * -1)
+            self.canBeKiller = True
+        isQuestionAsked = False
+        # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
 
 def terminate():
