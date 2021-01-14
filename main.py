@@ -113,7 +113,7 @@ class Enemy(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
-        super().__init__(all_sprites)
+        super().__init__(player_group, all_sprites)
         self.frames = [[] for _ in range(5)]
         self.direction = 0
         self.cut_sheet(sheet, columns, rows)
@@ -181,72 +181,18 @@ class Player(pygame.sprite.Sprite):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, sheet, columns, rows, x, y):
+    def __init__(self, name_file, x, y):
         super().__init__(all_sprites)
         self.frames = [[] for _ in range(5)]
-        self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
-        #self.image = load_image()
-        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
-        self.last_action = (0, 0)
-        self.isKiller = False
-        self.canBeKiller = True
-        self.btns = {
-            119: (0, -1),  # W
-            97: (-1, 0),  # A
-            115: (0, 1),  # S
-            100: (1, 0)  # D
-        }
-        self.actions = {
-            (0, -1): 3,
-            (-1, 0): 2,
-            (0, 1): 1,
-            (1, 0): 4
-        }
+        self.image = load_image(name_file)
+        self.rect = pygame.Rect(0,0,60,20)
+        self.rect = self.rect.move(x, y)
 
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        cnt = 0
-        for j in range(rows):
-            if 1 <= j <= 3:
-                continue
-            p = 3 if j == 0 else columns
-            for i in range(p):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames[cnt].append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
-            cnt += 1
-
-    def update(self):
-        self.change_frame()
-
-    def change_frame(self):
-        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.direction])
-        self.image = self.frames[self.direction][int(self.cur_frame)]
-
-    def do_move(self, key_number):
-        x, y = self.btns.get(key_number, (None, None))
-        if x is None:
-            return
-        self.moving(x, y)
-
-    def moving(self, x, y):
-        global isQuestionAsked
-        self.direction = self.actions[(x, y)]
-        self.last_action = (x, y)
-        for i in range(80):
-            self.rect = self.rect.move(x, y)
-            redraw()
-        self.direction = 0
-        if self.isKiller:
-            self.isKiller = False
-            self.canBeKiller = False
-            player.moving(player.last_action[0] * -1, player.last_action[1] * -1)
-            self.canBeKiller = True
-        isQuestionAsked = False
-        # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
-
+    def update(self, *args):
+        if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
+                self.rect.collidepoint(args[0].pos):
+            print('ok')
 
 def terminate():
     pygame.quit()
@@ -295,9 +241,10 @@ def start_screen():
 def question_screen():
     global screen, clock
 
+    #Button('acceptBtn.png', 100, 100)
     fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
     screen.blit(fon, (100, 100))
-
+    btns_group = pygame.sprite.Group()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -328,7 +275,16 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    field = ['.......', '.......', '..eee..', '.......', '..@....', '.......', '......', '........']
+    field = ['................',
+             '................',
+             '..eee...........',
+             '................',
+             '..@.............',
+             '................',
+             '................',
+             '................',
+             '................',
+             '................']
     player, w, h = generate_level(field)
     r = 0
     fps = 60
