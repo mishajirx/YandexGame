@@ -1,12 +1,12 @@
 import os
 import sys
-
+import random
 import pygame
 
 FPS = 50
 N = M = 800
 TILE_SIZE = 80
-
+masOfGrass = list()
 
 # Изображение не получится загрузить
 # без предварительной инициализации pygame
@@ -35,14 +35,14 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                Tile('empty', x, y)
+                Tile(random.choice(masOfGrass), x, y)
             elif level[y][x] == 'e':
-                Tile('empty', x, y)
+                Tile(random.choice(masOfGrass), x, y)
                 Enemy(load_image('enemy.png', -1), 3, 2, x, y)
             elif level[y][x] == '@':
-                Tile('empty', x, y)
+                Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
-    new_player = Player(load_image("test.png", -1), 10, 8, *playerxy)
+    new_player = Player(load_image("Main5.png", -1), 10, 8, *playerxy)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -231,10 +231,13 @@ if __name__ == '__main__':
     pygame.init()
     size = width, height = N, M
     screen = pygame.display.set_mode(size)
-
+    masOfGrass = ["empty1", "empty2", "empty3"]
     tile_images = {
         'wall': load_image('box.png'),
-        'empty': load_image('grass.png')
+        'empty': load_image('grass.png'),
+        'empty1': load_image('grass1.png'),
+        'empty2': load_image('grass2.png'),
+        'empty3': load_image('grass3.png'),
     }
 
     # основной персонаж
