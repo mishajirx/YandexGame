@@ -6,7 +6,7 @@ import pygame
 FPS = 50
 N = M = 800
 TILE_SIZE = 80
-
+isQuestionAsked = False
 
 # Изображение не получится загрузить
 # без предварительной инициализации pygame
@@ -91,10 +91,13 @@ class Enemy(pygame.sprite.Sprite):
             cnt += 1
 
     def update(self):
+        global isQuestionAsked
         self.change_frame()
-        if pygame.sprite.collide_mask(self, player):
-            some_screen()
-            self.kill()
+        if player.canBeKiller and pygame.sprite.collide_mask(self, player):
+            if not isQuestionAsked:
+                question_screen()
+                isQuestionAsked = True
+            # self.kill()
             player.isKiller = True
 
     def change_frame(self):
@@ -113,6 +116,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
         self.last_action = (0, 0)
         self.isKiller = False
+        self.canBeKiller = True
         self.btns = {
             119: (0, -1),  # W
             97: (-1, 0),  # A
@@ -154,6 +158,7 @@ class Player(pygame.sprite.Sprite):
         self.moving(x, y)
 
     def moving(self, x, y):
+        global isQuestionAsked
         self.direction = self.actions[(x, y)]
         self.last_action = (x, y)
         for i in range(80):
@@ -162,8 +167,13 @@ class Player(pygame.sprite.Sprite):
         self.direction = 0
         if self.isKiller:
             self.isKiller = False
+            self.canBeKiller = False
             player.moving(player.last_action[0] * -1, player.last_action[1] * -1)
+            self.canBeKiller = True
+        isQuestionAsked = False
         # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+
+
 
 
 def terminate():
@@ -210,7 +220,7 @@ def start_screen():
         clock.tick(FPS)
 
 
-def some_screen():
+def question_screen():
     global screen, clock
 
     fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
@@ -243,7 +253,7 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    field = ['.......', '.......', '..eee..', '.......', '.......', '.......', '......', '....@...']
+    field = ['.......', '.......', '..eee..', '.......', '..@....', '.......', '......', '........']
     player, w, h = generate_level(field)
     r = 0
     fps = 60
@@ -257,6 +267,6 @@ if __name__ == '__main__':
             elif event.type == pygame.KEYDOWN:
                 player.do_move(event.key)
             elif event.type == pygame.MOUSEWHEEL:
-                some_screen()
+                question_screen()
         redraw()
     pygame.quit()
