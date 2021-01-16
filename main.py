@@ -194,6 +194,24 @@ class Button(pygame.sprite.Sprite):
                 self.rect.collidepoint(args[0].pos):
             print('ok')
 
+
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - width // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
+
+
 def terminate():
     pygame.quit()
     sys.exit()
@@ -258,6 +276,7 @@ def question_screen():
 
 if __name__ == '__main__':
     pygame.init()
+    camera = Camera()
     size = width, height = N, M
     screen = pygame.display.set_mode(size)
     masOfGrass = ["empty1", "empty2", "empty3"]
@@ -292,6 +311,12 @@ if __name__ == '__main__':
     running = True
     start_screen()
     while running:
+        # изменяем ракурс камеры
+        camera.update(player);
+        # обновляем положение всех спрайтов
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
