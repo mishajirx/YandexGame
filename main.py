@@ -44,7 +44,7 @@ def generate_level(level):
                 Tile(random.choice(masOfGrass), x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
-                Enemy(load_image('enemy.png', -1), 3, 2, x, y)
+                Enemy(load_image('enemy.png', -1), 3, 2, x, y, 4)
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
@@ -76,7 +76,7 @@ class Tile(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, sheet, columns, rows, x, y):
+    def __init__(self, sheet, columns, rows, x, y, difficulty):
         super().__init__(all_sprites)
         self.frames = [[] for _ in range(5)]
         self.status = 0
@@ -85,6 +85,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.frames[self.status][self.cur_frame]
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
         self.isAlive = True
+        self.difficulty = difficulty
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -106,10 +107,13 @@ class Enemy(pygame.sprite.Sprite):
             if not isQuestionAsked:
                 ans = question_screen()
                 isQuestionAsked = True
-            if ans:
+            if ans and player.skill >= self.difficulty:
                 self.status = 1
+                player.xp += 2
             else:
                 player.isKiller = True
+                if player.skill < self.difficulty:
+                    message_screen(['У вас нет таких навыков'])
 
     def change_frame(self):
         self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
@@ -120,6 +124,9 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(player_group, all_sprites)
         self.frames = [[] for _ in range(5)]
+        self.skill = 1
+        self.xp = 0
+        self.time_left = 300
         self.direction = 0
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
@@ -228,8 +235,28 @@ def redraw():
     screen.fill((0, 0, 0))
     all_sprites.draw(screen)
     all_sprites.update()
+    make_stat()
     pygame.display.flip()
     clock.tick(fps)
+
+
+def make_stat():
+    fon = pygame.transform.scale(load_image('stat_bg.png'), (180, 130))
+    screen.blit(fon, (N - 160, 0))
+    t = 'time left: ' + str(player.time_left)
+    s = 'skill: ' + str(player.skill)
+    xp = 'xp: ' + str(player.xp)
+    font = pygame.font.Font(None, 30)
+    text_coord = 10
+    for line in [t, s, xp]:
+        string_rendered = font.render(line, True, pygame.Color('green'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = N - 150
+        text_coord += intro_rect.height
+        print('here')
+        screen.blit(string_rendered, intro_rect)
 
 
 def start_screen():
@@ -245,6 +272,33 @@ def start_screen():
     text_coord = 50
     for line in intro_text:
         string_rendered = font.render(line, True, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return  # начинаем игру
+        pygame.display.flip()
+        clock.tick(FPS)
+
+def message_screen(message):
+    global screen, clock
+
+    fon = pygame.transform.scale(load_image('bg.jpg'), (N//4, M//4))
+    window_x, window_y = N // 2 - 100, M // 2 - 100
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 10
+    for line in message:
+        string_rendered = font.render(line, True, pygame.Color('white'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -335,6 +389,8 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     running = True
     start_screen()
+    MYEVENT = pygame.USEREVENT + 1
+    pygame.time.set_timer(MYEVENT, 1000)
     while running:
         camera_move()
 
@@ -343,7 +399,8 @@ if __name__ == '__main__':
                 running = False
             elif event.type == pygame.KEYDOWN:
                 player.do_move(event.key)
-            elif event.type == pygame.MOUSEWHEEL:
-                question_screen()
+            elif event.type == MYEVENT:
+                player.time_left -= 1
         redraw()
+        make_stat()
     pygame.quit()
