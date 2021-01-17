@@ -49,6 +49,7 @@ def generate_level(level):
                 Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
     new_player = Player(load_image("Main5.png", -1), 10, 8, *playerxy)
+    # new_player = Player(load_image("test.png", -1), 10, 8, *playerxy)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -100,13 +101,15 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         global isQuestionAsked
         self.change_frame()
-        if not self.status and player.canBeKiller and pygame.sprite.collide_mask(self, player):
+        f = not isQuestionAsked and not self.status and player.canBeKiller
+        if f and pygame.sprite.collide_mask(self, player):
             if not isQuestionAsked:
-                question_screen()
+                ans = question_screen()
                 isQuestionAsked = True
-
-            self.status = 1
-            player.isKiller = True
+            if ans:
+                self.status = 1
+            else:
+                player.isKiller = True
 
     def change_frame(self):
         self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
@@ -184,18 +187,19 @@ class Player(pygame.sprite.Sprite):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, name_file, x, y):
-        super().__init__(all_sprites)
+    def __init__(self, name_file, x, y, group, type):
+        super().__init__(group)
         self.frames = [[] for _ in range(5)]
         self.cur_frame = 0
         self.image = load_image(name_file)
         self.rect = pygame.Rect(0, 0, 60, 20)
         self.rect = self.rect.move(x, y)
+        self.type = type
 
     def update(self, *args):
-        if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
-                self.rect.collidepoint(args[0].pos):
-            print('ok')
+        if args and self.rect.collidepoint(args[0].pos):
+            return True, self.type
+        return False, False
 
 
 class Camera:
@@ -262,19 +266,29 @@ def start_screen():
 def question_screen():
     global screen, clock
 
-    # Button('acceptBtn.png', 100, 100)
     fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
-    screen.blit(fon, (100, 100))
-    btns_group = pygame.sprite.Group()
+    text = pygame.font.Font(None, 50).render('Kill him?', True, (255, 255, 255))
+    question_group = pygame.sprite.Group()
+    window_x, window_y = N // 2 - 100, M // 2 - 100
+    answer = (False, False)
+    screen.blit(fon, (window_x, window_y))
+    screen.blit(text, [window_x + 10, window_y + 50])
+    btn1 = Button('acceptBtn.png', window_x + 10, window_y + 100, question_group, True)
+    btn2 = Button('declineBtn.png', window_x + 110, window_y + 100, question_group, False)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                print(int(event.type))
-                return  # начинаем игру
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                answer = max(btn1.update(event), btn2.update(event))
+        if answer[0]:
+            for i in question_group:
+                i.kill()
+            return answer[1]
+        question_group.update()
+        question_group.draw(screen)
         pygame.display.flip()
-        clock.tick(FPS)
+        clock.tick(fps)
 
 
 def camera_move():
