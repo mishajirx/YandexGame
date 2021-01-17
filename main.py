@@ -83,6 +83,7 @@ class Enemy(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.status][self.cur_frame]
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        self.isAlive = True
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -99,11 +100,12 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         global isQuestionAsked
         self.change_frame()
-        if player.canBeKiller and pygame.sprite.collide_mask(self, player):
+        if not self.status and player.canBeKiller and pygame.sprite.collide_mask(self, player):
             if not isQuestionAsked:
                 question_screen()
                 isQuestionAsked = True
-            # self.kill()
+
+            self.status = 1
             player.isKiller = True
 
     def change_frame(self):
@@ -170,6 +172,7 @@ class Player(pygame.sprite.Sprite):
         for i in range(80):
             self.rect = self.rect.move(x, y)
             redraw()
+            camera_move()  # не супер производительно, но плавно
         self.direction = 0
         if self.isKiller:
             self.isKiller = False
@@ -186,7 +189,7 @@ class Button(pygame.sprite.Sprite):
         self.frames = [[] for _ in range(5)]
         self.cur_frame = 0
         self.image = load_image(name_file)
-        self.rect = pygame.Rect(0,0,60,20)
+        self.rect = pygame.Rect(0, 0, 60, 20)
         self.rect = self.rect.move(x, y)
 
     def update(self, *args):
@@ -259,7 +262,7 @@ def start_screen():
 def question_screen():
     global screen, clock
 
-    #Button('acceptBtn.png', 100, 100)
+    # Button('acceptBtn.png', 100, 100)
     fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
     screen.blit(fon, (100, 100))
     btns_group = pygame.sprite.Group()
@@ -272,6 +275,14 @@ def question_screen():
                 return  # начинаем игру
         pygame.display.flip()
         clock.tick(FPS)
+
+
+def camera_move():
+    # изменяем ракурс камеры
+    camera.update(player)
+    # обновляем положение всех спрайтов
+    for sprite in all_sprites:
+        camera.apply(sprite)
 
 
 if __name__ == '__main__':
@@ -311,11 +322,7 @@ if __name__ == '__main__':
     running = True
     start_screen()
     while running:
-        # изменяем ракурс камеры
-        camera.update(player);
-        # обновляем положение всех спрайтов
-        for sprite in all_sprites:
-            camera.apply(sprite)
+        camera_move()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
