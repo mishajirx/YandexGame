@@ -42,8 +42,14 @@ def do_generate():
         for j in range(35):
             if i == 5 or i == 29 or j == 5 or j == 29:
                 subres.append('#')
-            else:
+            elif i < 5 or j < 5:
                 subres.append('.')
+            else:
+                a = random.choice([False] * 9 + [True])
+                if not a:
+                    subres.append('.')
+                else:
+                    subres.append(random.choice(['e', 's']))
         res.append(subres)
     res[6][6] = '@'
     return res
@@ -60,10 +66,10 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
-                Enemy(load_image('enemy.png', -1), 3, 2, x, y, 4)
+                Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(1, 10))
             elif level[y][x] == 's':
                 Tile(random.choice(masOfGrass), x, y)
-                Learning(load_image('skillup.png', -1), 3, 2, x, y, 0)
+                Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(1, 10))
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
@@ -204,8 +210,8 @@ class Player(pygame.sprite.Sprite):
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.direction][self.cur_frame]
-        self.coords = (x,y)
-        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        self.coords = (x, y)
+        self.rect = self.rect.move(x * TILE_SIZE + 20, y * TILE_SIZE)
         self.last_action = (0, 0)
         self.NeedGoBack = False
         self.NotGoingBackYet = True
@@ -318,12 +324,16 @@ def redraw():
     clock.tick(fps)
 
 
+def format_time(m):
+    return str(m // 60) + ':' + str(m % 60)
+
+
 def make_stat():
-    fon = pygame.transform.scale(load_image('stat_bg.png'), (180, 130))
-    screen.blit(fon, (N - 160, 0))
-    t = 'time left: ' + str(player.time_left)
+    fon = pygame.transform.scale(load_image('stat_bg.png'), (190, 130))
+    screen.blit(fon, (N - 190, 0))
+    t = 'deadline in: ' + format_time(player.time_left)
     s = 'skill: ' + str(player.skill)
-    xp = 'xp: ' + str(player.xp)
+    xp = 'Yandex.Score: ' + str(player.xp)
     font = pygame.font.Font(None, 30)
     text_coord = 10
     for line in [t, s, xp]:
@@ -331,7 +341,7 @@ def make_stat():
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = N - 150
+        intro_rect.x = N - 170
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
 
