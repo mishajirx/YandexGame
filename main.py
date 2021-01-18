@@ -58,6 +58,7 @@ def do_generate():
 def generate_level(level):
     new_player, x, y = None, None, None
     playerxy = (0, 0)
+    diff = 0
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -66,10 +67,12 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
-                Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(0, 5))
+                Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(0, diff))
+                diff += 1
             elif level[y][x] == 's':
                 Tile(random.choice(masOfGrass), x, y)
-                Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(0, 5))
+                Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(0, diff))
+                diff += 1
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
@@ -265,7 +268,7 @@ class Player(pygame.sprite.Sprite):
             return
         self.direction = self.actions[(x, y)]
         self.last_action = (x, y)
-        speedk = 2 # коэффициент ускорения
+        speedk = 2  # коэффициент ускорения
         for i in range(80 // speedk):
             self.rect = self.rect.move(x * speedk, y * speedk)
             redraw()
@@ -473,16 +476,6 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    # field = ['................',
-    #          '................',
-    #          '..eeeeeeeeeeeee.',
-    #          '................',
-    #          '..@.......s.....',
-    #          '................',
-    #          '................',
-    #          '................',
-    #          '................',
-    #          '................']
     field = do_generate()
     player, w, h = generate_level(field)
     r = 0
