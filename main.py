@@ -496,9 +496,8 @@ if __name__ == '__main__':
                 player.do_move(event.key)
             elif event.type == MYEVENT:
                 player.time_left -= 1
-            if player.time_left <= 0:
-                pygame.quit()
-                terminate()
         redraw()
         make_stat()
-    pygame.quit()
+        if player.time_left <= 0:
+            break
+    terminate()
