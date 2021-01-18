@@ -69,11 +69,12 @@ def generate_level(level):
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
                 # Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(0, diff))
-                Enemy(load_image('book3.png', -1), 1, 1, x, y, random.randint(0, diff))
+                Enemy(load_image('book3.png', -1), 1, 2, x, y, random.randint(0, diff))
                 diff += 1
             elif level[y][x] == 's':
                 Tile(random.choice(masOfGrass), x, y)
-                Learning(load_image('book.png', -1), 1, 1, x, y, random.randint(0, diff))
+                # Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(0, diff))
+                Learning(load_image('book.png', -1), 1, 2, x, y, random.randint(0, diff))
                 diff += 1
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
@@ -117,6 +118,7 @@ class Learning(pygame.sprite.Sprite):
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
         self.isAlive = True
         self.difficulty = difficulty
+        print(*self.frames, sep='\n')
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -154,7 +156,7 @@ class Learning(pygame.sprite.Sprite):
                 player.NeedGoBack = True
 
     def change_frame(self):
-        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
+        self.cur_frame = int((self.cur_frame + 0.2) % len(self.frames[self.status]))
         self.image = self.frames[self.status][int(self.cur_frame)]
 
 
@@ -203,7 +205,7 @@ class Enemy(pygame.sprite.Sprite):
                 player.NeedGoBack = True
 
     def change_frame(self):
-        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
+        self.cur_frame = int((self.cur_frame + 0.2) % len(self.frames[self.status]))
         self.image = self.frames[self.status][int(self.cur_frame)]
 
 
@@ -211,7 +213,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(player_group, all_sprites)
         self.frames = [[] for _ in range(5)]
-        self.skill = 1
+        self.skill = 3
         self.xp = 0
         self.time_left = timer_time
         self.direction = 0
@@ -357,23 +359,8 @@ def make_stat():
 
 def start_screen():
     global screen, clock
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Если в правилах несколько строк,",
-                  "приходится выводить их построчно"]
-
-    fon = pygame.transform.scale(load_image('bg.jpg'), (N, M))
+    fon = pygame.transform.scale(load_image('intro.png'), (N, M))
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, True, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
 
     while True:
         for event in pygame.event.get():
@@ -432,8 +419,8 @@ def question_screen(message):
         intro_rect.x = window_x + 10
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-    btn1 = Button('acceptBtn.png', window_x + 10, window_y + 140, question_group, True)
-    btn2 = Button('declineBtn.png', window_x + 110, window_y + 140, question_group, False)
+    btn1 = Button('acceptBtn.png', window_x + 10, window_y + 170, question_group, True)
+    btn2 = Button('declineBtn.png', window_x + 110, window_y + 170, question_group, False)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -500,5 +487,6 @@ if __name__ == '__main__':
         redraw()
         make_stat()
         if player.time_left <= 0:
-            break
+            running = False
+    message_screen(['GAME OVER', f'YOUR SCORE  {player.xp}', f'YOUR SKILL  {player.skill}'])
     terminate()
