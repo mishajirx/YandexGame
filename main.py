@@ -66,10 +66,10 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
-                Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(1, 10))
+                Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(0, 5))
             elif level[y][x] == 's':
                 Tile(random.choice(masOfGrass), x, y)
-                Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(1, 10))
+                Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(0, 5))
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
@@ -132,7 +132,10 @@ class Learning(pygame.sprite.Sprite):
         if f and pygame.sprite.collide_mask(self, player):
             ans = False
             if not isQuestionAsked:
-                ans = question_screen(['Listen Course?'])
+                q = 'Listen Course?'
+                s = f'Required score: {self.difficulty}'
+                t = 'You will lost 10 sec'
+                ans = question_screen([q, s, t])
                 isQuestionAsked = True
             if ans:
                 if player.xp < self.difficulty:
@@ -262,8 +265,9 @@ class Player(pygame.sprite.Sprite):
             return
         self.direction = self.actions[(x, y)]
         self.last_action = (x, y)
-        for i in range(80):
-            self.rect = self.rect.move(x, y)
+        speedk = 2 # коэффициент ускорения
+        for i in range(80 // speedk):
+            self.rect = self.rect.move(x * speedk, y * speedk)
             redraw()
             camera_move()  # не супер производительно, но плавно
         self.coords = (self.coords[0] + x, self.coords[1] + y)
@@ -423,8 +427,8 @@ def question_screen(message):
         intro_rect.x = window_x + 10
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-    btn1 = Button('acceptBtn.png', window_x + 10, window_y + 100, question_group, True)
-    btn2 = Button('declineBtn.png', window_x + 110, window_y + 100, question_group, False)
+    btn1 = Button('acceptBtn.png', window_x + 10, window_y + 140, question_group, True)
+    btn2 = Button('declineBtn.png', window_x + 110, window_y + 140, question_group, False)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
