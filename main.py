@@ -118,14 +118,16 @@ class Learning(pygame.sprite.Sprite):
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
         self.isAlive = True
         self.difficulty = difficulty
-        print(*self.frames, sep='\n')
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         cnt = 0
         for j in range(rows):
-            p = 1 if j == 1 else columns
+            if j == 1:
+                p = 1
+            else:
+                p = columns
             for i in range(p):
                 frame_location = (self.rect.w * i, self.rect.h * j)
                 self.frames[cnt].append(sheet.subsurface(pygame.Rect(
@@ -135,7 +137,10 @@ class Learning(pygame.sprite.Sprite):
     def update(self):
         global isQuestionAsked
         self.change_frame()
-        f = not isQuestionAsked and not self.status and player.NotGoingBackYet
+        f1 = not isQuestionAsked
+        f2 = not self.status
+        f3 = player.NotGoingBackYet
+        f = f1 and f2 and f3
         if f and pygame.sprite.collide_mask(self, player):
             ans = False
             if not isQuestionAsked:
@@ -336,7 +341,12 @@ def redraw():
 
 
 def format_time(m):
-    return str(m // 60) + ':' + str(m % 60)
+    res1 = str(m // 60)
+    res2 = str(m % 60)
+    res1 = '0' * (2 - len(res1)) + res1
+    res2 = '0' * (2 - len(res2)) + res2
+    res = res1 + ':' + res2
+    return res
 
 
 def make_stat():
