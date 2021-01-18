@@ -45,9 +45,13 @@ def generate_level(level):
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
                 Enemy(load_image('enemy.png', -1), 3, 2, x, y, 4)
+            elif level[y][x] == 's':
+                Tile(random.choice(masOfGrass), x, y)
+                Learning(load_image('skillup.png', -1), 3, 2, x, y, 0)
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
                 playerxy = (x, y)
+
     new_player = Player(load_image("Main5.png", -1), 10, 8, *playerxy)
     # new_player = Player(load_image("test.png", -1), 10, 8, *playerxy)
     # вернем игрока, а также размер поля в клетках
@@ -73,6 +77,54 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
+
+
+class Learning(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y, difficulty):
+        super().__init__(all_sprites)
+        self.frames = [[] for _ in range(5)]
+        self.status = 0
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.status][self.cur_frame]
+        self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
+        self.isAlive = True
+        self.difficulty = difficulty
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        cnt = 0
+        for j in range(rows):
+            p = 1 if j == 1 else columns
+            for i in range(p):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames[cnt].append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+            cnt += 1
+
+    def update(self):
+        global isQuestionAsked
+        self.change_frame()
+        f = not isQuestionAsked and not self.status and player.NotGoingBackYet
+        if f and pygame.sprite.collide_mask(self, player):
+            if not isQuestionAsked:
+                ans = question_screen(['Listen Course?'])
+                isQuestionAsked = True
+            if ans:
+                if player.xp < self.difficulty:
+                    message_screen(['You don\'t have', 'enough score'])
+                    player.NeedGoBack = True
+                    return
+                self.status = 1
+                player.skill += 3
+                player.time_left -= 10
+            else:
+                player.NeedGoBack = True
+
+    def change_frame(self):
+        self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
+        self.image = self.frames[self.status][int(self.cur_frame)]
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -102,18 +154,21 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         global isQuestionAsked
         self.change_frame()
-        f = not isQuestionAsked and not self.status and player.canBeKiller
+        f = not isQuestionAsked and not self.status and player.NotGoingBackYet
         if f and pygame.sprite.collide_mask(self, player):
             if not isQuestionAsked:
-                ans = question_screen()
+                ans = question_screen(['Kill him?', f'You need skill {self.difficulty}'])
                 isQuestionAsked = True
-            if ans and player.skill >= self.difficulty:
+            if ans:
+                if player.skill < self.difficulty:
+                    message_screen(['You do not have', 'enough skill'])
+                    player.NeedGoBack = True
+                    return
                 self.status = 1
                 player.xp += 2
+                player.time_left += 5
             else:
-                player.isKiller = True
-                if player.skill < self.difficulty:
-                    message_screen(['У вас нет таких навыков'])
+                player.NeedGoBack = True
 
     def change_frame(self):
         self.cur_frame = (self.cur_frame + 0.2) % len(self.frames[self.status])
@@ -133,8 +188,8 @@ class Player(pygame.sprite.Sprite):
         self.image = self.frames[self.direction][self.cur_frame]
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
         self.last_action = (0, 0)
-        self.isKiller = False
-        self.canBeKiller = True
+        self.NeedGoBack = False
+        self.NotGoingBackYet = True
         self.btns = {
             119: (0, -1),  # W
             97: (-1, 0),  # A
@@ -184,11 +239,11 @@ class Player(pygame.sprite.Sprite):
             redraw()
             camera_move()  # не супер производительно, но плавно
         self.direction = 0
-        if self.isKiller:
-            self.isKiller = False
-            self.canBeKiller = False
+        if self.NeedGoBack:
+            self.NeedGoBack = False
+            self.NotGoingBackYet = False
             player.moving(player.last_action[0] * -1, player.last_action[1] * -1)
-            self.canBeKiller = True
+            self.NotGoingBackYet = True
         isQuestionAsked = False
         # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
@@ -255,7 +310,6 @@ def make_stat():
         intro_rect.top = text_coord
         intro_rect.x = N - 150
         text_coord += intro_rect.height
-        print('here')
         screen.blit(string_rendered, intro_rect)
 
 
@@ -289,20 +343,21 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+
 def message_screen(message):
     global screen, clock
 
-    fon = pygame.transform.scale(load_image('bg.jpg'), (N//4, M//4))
+    fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
     window_x, window_y = N // 2 - 100, M // 2 - 100
-    screen.blit(fon, (0, 0))
+    screen.blit(fon, (window_x, window_y))
     font = pygame.font.Font(None, 30)
-    text_coord = 10
+    text_coord = window_y + 10
     for line in message:
         string_rendered = font.render(line, True, pygame.Color('white'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 10
+        intro_rect.x = window_x + 10
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
 
@@ -317,16 +372,24 @@ def message_screen(message):
         clock.tick(FPS)
 
 
-def question_screen():
+def question_screen(message):
     global screen, clock
 
     fon = pygame.transform.scale(load_image('bg.jpg'), (N // 4, M // 4))
-    text = pygame.font.Font(None, 50).render('Kill him?', True, (255, 255, 255))
+    font = pygame.font.Font(None, 30)
     question_group = pygame.sprite.Group()
     window_x, window_y = N // 2 - 100, M // 2 - 100
     answer = (False, False)
+    text_coord = window_y + 20
     screen.blit(fon, (window_x, window_y))
-    screen.blit(text, [window_x + 10, window_y + 50])
+    for line in message:
+        string_rendered = font.render(line, True, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = window_x + 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
     btn1 = Button('acceptBtn.png', window_x + 10, window_y + 100, question_group, True)
     btn2 = Button('declineBtn.png', window_x + 110, window_y + 100, question_group, False)
     while True:
@@ -377,7 +440,7 @@ if __name__ == '__main__':
              '................',
              '..eee...........',
              '................',
-             '..@.............',
+             '..@.......s.....',
              '................',
              '................',
              '................',
