@@ -34,18 +34,20 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
     return image
 
+
 def do_generate():
     res = []
     for i in range(35):
         subres = []
         for j in range(35):
-            if i < 5 or i > 29 or j < 5 or j > 29:
-                subres.append('e')
+            if i == 5 or i == 29 or j == 5 or j == 29:
+                subres.append('#')
             else:
                 subres.append('.')
         res.append(subres)
     res[6][6] = '@'
     return res
+
 
 def generate_level(level):
     new_player, x, y = None, None, None
@@ -54,7 +56,7 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile(random.choice(masOfGrass), x, y)
-            elif level[y][x] == 'e':
+            elif level[y][x] == '#':
                 Tile('wall', x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
@@ -91,11 +93,6 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
-        self.t = tile_type
-
-    # def update(self, *args, **kwargs):
-    #     if self.t == 'wall' and player.NotGoingBackYet and pygame.sprite.collide_mask(self, player):
-    #         player.NeedGoBack = True
 
 
 class Learning(pygame.sprite.Sprite):
@@ -207,6 +204,7 @@ class Player(pygame.sprite.Sprite):
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.direction][self.cur_frame]
+        self.coords = (x,y)
         self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
         self.last_action = (0, 0)
         self.NeedGoBack = False
@@ -253,12 +251,16 @@ class Player(pygame.sprite.Sprite):
 
     def moving(self, x, y):
         global isQuestionAsked
+        # print(self.rect.y // TILE_SIZE + y, self.rect.x // TILE_SIZE + x)
+        if field[self.coords[0] + x][self.coords[1] + y] == '#':
+            return
         self.direction = self.actions[(x, y)]
         self.last_action = (x, y)
         for i in range(80):
             self.rect = self.rect.move(x, y)
             redraw()
             camera_move()  # не супер производительно, но плавно
+        self.coords = (self.coords[0] + x, self.coords[1] + y)
         self.direction = 0
         if self.NeedGoBack:
             self.NeedGoBack = False
