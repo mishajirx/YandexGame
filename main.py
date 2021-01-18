@@ -34,6 +34,18 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
     return image
 
+def do_generate():
+    res = []
+    for i in range(35):
+        subres = []
+        for j in range(35):
+            if i < 5 or i > 29 or j < 5 or j > 29:
+                subres.append('e')
+            else:
+                subres.append('.')
+        res.append(subres)
+    res[6][6] = '@'
+    return res
 
 def generate_level(level):
     new_player, x, y = None, None, None
@@ -42,6 +54,8 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile(random.choice(masOfGrass), x, y)
+            elif level[y][x] == 'e':
+                Tile('wall', x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
                 Enemy(load_image('enemy.png', -1), 3, 2, x, y, 4)
@@ -77,6 +91,11 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
+        self.t = tile_type
+
+    # def update(self, *args, **kwargs):
+    #     if self.t == 'wall' and player.NotGoingBackYet and pygame.sprite.collide_mask(self, player):
+    #         player.NeedGoBack = True
 
 
 class Learning(pygame.sprite.Sprite):
@@ -108,6 +127,7 @@ class Learning(pygame.sprite.Sprite):
         self.change_frame()
         f = not isQuestionAsked and not self.status and player.NotGoingBackYet
         if f and pygame.sprite.collide_mask(self, player):
+            ans = False
             if not isQuestionAsked:
                 ans = question_screen(['Listen Course?'])
                 isQuestionAsked = True
@@ -156,8 +176,9 @@ class Enemy(pygame.sprite.Sprite):
         self.change_frame()
         f = not isQuestionAsked and not self.status and player.NotGoingBackYet
         if f and pygame.sprite.collide_mask(self, player):
+            ans = False
             if not isQuestionAsked:
-                ans = question_screen(['Kill him?', f'You need skill {self.difficulty}'])
+                ans = question_screen(['Solve it?', f'You need skill {self.difficulty}'])
                 isQuestionAsked = True
             if ans:
                 if player.skill < self.difficulty:
@@ -436,16 +457,17 @@ if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
-    field = ['................',
-             '................',
-             '..eee...........',
-             '................',
-             '..@.......s.....',
-             '................',
-             '................',
-             '................',
-             '................',
-             '................']
+    # field = ['................',
+    #          '................',
+    #          '..eeeeeeeeeeeee.',
+    #          '................',
+    #          '..@.......s.....',
+    #          '................',
+    #          '................',
+    #          '................',
+    #          '................',
+    #          '................']
+    field = do_generate()
     player, w, h = generate_level(field)
     r = 0
     fps = 60
