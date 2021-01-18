@@ -3,6 +3,7 @@ import sys
 import random
 import pygame
 
+timer_time = 300
 FPS = 50
 N = M = 800
 TILE_SIZE = 80
@@ -211,7 +212,7 @@ class Player(pygame.sprite.Sprite):
         self.frames = [[] for _ in range(5)]
         self.skill = 1
         self.xp = 0
-        self.time_left = 300
+        self.time_left = timer_time
         self.direction = 0
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
@@ -495,6 +496,9 @@ if __name__ == '__main__':
                 player.do_move(event.key)
             elif event.type == MYEVENT:
                 player.time_left -= 1
+            if player.time_left <= 0:
+                pygame.quit()
+                terminate()
         redraw()
         make_stat()
     pygame.quit()
