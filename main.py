@@ -68,11 +68,12 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == 'e':
                 Tile(random.choice(masOfGrass), x, y)
-                Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(0, diff))
+                # Enemy(load_image('enemy.png', -1), 3, 2, x, y, random.randint(0, diff))
+                Enemy(load_image('book3.png', -1), 1, 1, x, y, random.randint(0, diff))
                 diff += 1
             elif level[y][x] == 's':
                 Tile(random.choice(masOfGrass), x, y)
-                Learning(load_image('skillup.png', -1), 3, 2, x, y, random.randint(0, diff))
+                Learning(load_image('book.png', -1), 1, 1, x, y, random.randint(0, diff))
                 diff += 1
             elif level[y][x] == '@':
                 Tile(random.choice(masOfGrass), x, y)
