@@ -44,7 +44,7 @@ def do_generate():
         for j in range(35):
             if i == 5 or i == 29 or j == 5 or j == 29:
                 subres.append('#')
-            elif i < 5 or j < 5:
+            elif i < 5 or j < 5 or j > 29 or i > 29:
                 subres.append('.')
             else:
                 a = random.choice([False] * 9 + [True])
@@ -220,6 +220,7 @@ class Enemy(pygame.sprite.Sprite):
         self.cur_frame = int((self.cur_frame + 0.2) % len(self.frames[self.status]))
         self.image = self.frames[self.status][int(self.cur_frame)]
 
+
 # основной класс игрока
 class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
@@ -299,6 +300,7 @@ class Player(pygame.sprite.Sprite):
         isQuestionAsked = False
         # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
+
 # класс кнопки выбора
 class Button(pygame.sprite.Sprite):
     def __init__(self, name_file, x, y, group, type):
@@ -314,6 +316,7 @@ class Button(pygame.sprite.Sprite):
         if args and self.rect.collidepoint(args[0].pos):
             return True, self.type
         return False, False
+
 
 # камера - сдвигает все объекты в нужную сторону
 class Camera:
@@ -332,10 +335,12 @@ class Camera:
         self.dx = -(target.rect.x + target.rect.w // 2 - width // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
 
+
 # корректное завершение программы
 def terminate():
     pygame.quit()
     sys.exit()
+
 
 # перерисовка всех объеектов на поле
 def redraw():
@@ -346,6 +351,7 @@ def redraw():
     pygame.display.flip()
     clock.tick(fps)
 
+
 # превести время к нормальному виду
 def format_time(m):
     res1 = str(m // 60)
@@ -354,6 +360,7 @@ def format_time(m):
     res2 = '0' * (2 - len(res2)) + res2
     res = res1 + ':' + res2
     return res
+
 
 # вывести статистику персонажа
 def make_stat():
@@ -373,6 +380,7 @@ def make_stat():
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
 
+
 # экран входа - приветствие и правила
 def start_screen():
     global screen, clock
@@ -388,6 +396,7 @@ def start_screen():
                 return  # начинаем игру
         pygame.display.flip()
         clock.tick(FPS)
+
 
 # экран сообщающий что либо
 def message_screen(message):
@@ -416,6 +425,7 @@ def message_screen(message):
                 return  # начинаем игру
         pygame.display.flip()
         clock.tick(FPS)
+
 
 # экран спрашивающий что-либо
 def question_screen(message):
@@ -453,6 +463,7 @@ def question_screen(message):
         pygame.display.flip()
         clock.tick(fps)
 
+
 # сдвигаем всех на координаты поля
 def camera_move():
     # изменяем ракурс камеры
@@ -460,6 +471,7 @@ def camera_move():
     # обновляем положение всех спрайтов
     for sprite in all_sprites:
         camera.apply(sprite)
+
 
 # основной код
 if __name__ == '__main__':
