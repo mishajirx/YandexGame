@@ -18,7 +18,7 @@ isQuestionAsked = False
 # Изображение не получится загрузить
 # без предварительной инициализации pygame
 
-
+# метод возвращающий изображение
 def load_image(name, colorkey=None):
     fullname = os.path.join('pictures', name)
     # если файл не существует, то выходим
@@ -36,6 +36,7 @@ def load_image(name, colorkey=None):
     return image
 
 
+# случайная генерация поля
 def do_generate():
     res = []
     for i in range(35):
@@ -56,7 +57,8 @@ def do_generate():
     return res
 
 
-def generate_level(level):
+# отрисовка уровня по полю
+def draw_level(level):
     new_player, x, y = None, None, None
     playerxy = (0, 0)
     diff = 0
@@ -86,6 +88,7 @@ def generate_level(level):
     return new_player, x, y
 
 
+# загрузка уровня из файла - пока не реализовано
 def load_level(filename):
     filename = "data/" + filename
     # читаем уровень, убирая символы перевода строки
@@ -99,6 +102,7 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
+# клетка поля
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
@@ -107,6 +111,7 @@ class Tile(pygame.sprite.Sprite):
             TILE_SIZE * pos_x, TILE_SIZE * pos_y)
 
 
+# объект урока- даёт плюс к скиллу и тратит время
 class Learning(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y, difficulty):
         super().__init__(all_sprites)
@@ -165,6 +170,7 @@ class Learning(pygame.sprite.Sprite):
         self.image = self.frames[self.status][int(self.cur_frame)]
 
 
+# объект задачи - даёт плюс к опыту и времени
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y, difficulty):
         super().__init__(all_sprites)
@@ -196,7 +202,8 @@ class Enemy(pygame.sprite.Sprite):
         if f and pygame.sprite.collide_mask(self, player):
             ans = False
             if not isQuestionAsked:
-                ans = question_screen(['Solve it?', f'You need skill {self.difficulty}'])
+                t = 'You will get 11 sec'
+                ans = question_screen(['Solve it?', f'You need skill {self.difficulty}', t])
                 isQuestionAsked = True
             if ans:
                 if player.skill < self.difficulty:
@@ -205,7 +212,7 @@ class Enemy(pygame.sprite.Sprite):
                     return
                 self.status = 1
                 player.xp += 2
-                player.time_left += 5
+                player.time_left += 11
             else:
                 player.NeedGoBack = True
 
@@ -213,7 +220,7 @@ class Enemy(pygame.sprite.Sprite):
         self.cur_frame = int((self.cur_frame + 0.2) % len(self.frames[self.status]))
         self.image = self.frames[self.status][int(self.cur_frame)]
 
-
+# основной класс игрока
 class Player(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(player_group, all_sprites)
@@ -292,7 +299,7 @@ class Player(pygame.sprite.Sprite):
         isQuestionAsked = False
         # self.rect = self.rect.move(x * TILE_SIZE, y * TILE_SIZE)
 
-
+# класс кнопки выбора
 class Button(pygame.sprite.Sprite):
     def __init__(self, name_file, x, y, group, type):
         super().__init__(group)
@@ -308,7 +315,7 @@ class Button(pygame.sprite.Sprite):
             return True, self.type
         return False, False
 
-
+# камера - сдвигает все объекты в нужную сторону
 class Camera:
     # зададим начальный сдвиг камеры
     def __init__(self):
@@ -325,12 +332,12 @@ class Camera:
         self.dx = -(target.rect.x + target.rect.w // 2 - width // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
 
-
+# корректное завершение программы
 def terminate():
     pygame.quit()
     sys.exit()
 
-
+# перерисовка всех объеектов на поле
 def redraw():
     screen.fill((0, 0, 0))
     all_sprites.draw(screen)
@@ -339,7 +346,7 @@ def redraw():
     pygame.display.flip()
     clock.tick(fps)
 
-
+# превести время к нормальному виду
 def format_time(m):
     res1 = str(m // 60)
     res2 = str(m % 60)
@@ -348,7 +355,7 @@ def format_time(m):
     res = res1 + ':' + res2
     return res
 
-
+# вывести статистику персонажа
 def make_stat():
     fon = pygame.transform.scale(load_image('stat_bg.png'), (190, 130))
     screen.blit(fon, (N - 190, 0))
@@ -366,7 +373,7 @@ def make_stat():
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
 
-
+# экран входа - приветствие и правила
 def start_screen():
     global screen, clock
     fon = pygame.transform.scale(load_image('intro.png'), (N, M))
@@ -382,7 +389,7 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
-
+# экран сообщающий что либо
 def message_screen(message):
     global screen, clock
 
@@ -410,7 +417,7 @@ def message_screen(message):
         pygame.display.flip()
         clock.tick(FPS)
 
-
+# экран спрашивающий что-либо
 def question_screen(message):
     global screen, clock
 
@@ -446,7 +453,7 @@ def question_screen(message):
         pygame.display.flip()
         clock.tick(fps)
 
-
+# сдвигаем всех на координаты поля
 def camera_move():
     # изменяем ракурс камеры
     camera.update(player)
@@ -454,7 +461,7 @@ def camera_move():
     for sprite in all_sprites:
         camera.apply(sprite)
 
-
+# основной код
 if __name__ == '__main__':
     pygame.init()
     camera = Camera()
@@ -476,12 +483,14 @@ if __name__ == '__main__':
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
     field = do_generate()
-    player, w, h = generate_level(field)
+    player, w, h = draw_level(field)
     r = 0
     fps = 60
     clock = pygame.time.Clock()
     running = True
+    # начинаем
     start_screen()
+    # запускаем таймер
     MYEVENT = pygame.USEREVENT + 1
     pygame.time.set_timer(MYEVENT, 1000)
     while running:
@@ -498,5 +507,6 @@ if __name__ == '__main__':
         make_stat()
         if player.time_left <= 0:
             running = False
+    # игра окончена
     message_screen(['GAME OVER', f'YOUR SCORE  {player.xp}', f'YOUR SKILL  {player.skill}'])
     terminate()
